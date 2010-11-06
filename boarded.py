@@ -9,6 +9,10 @@ config.read((
     '/etc/boarded.conf'
 ))
 
+logfile = config.get('boarded', 'logfile')
+log = open(logfile, 'a')
+log.write(time.strftime('%a, %d %b %Y %H:%M:%S +0000\n', time.gmtime()))
+
 serialPort = config.get('boarded', 'serialport')
 port = serial.Serial(serialPort, 9600, timeout=1)
 
@@ -43,7 +47,9 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write('OK')
 
-        port.write(str(message + "\n"))
+        log.write('%s %s %s %s: "%s"\n' % (self.client_address,
+            self.command, self.path, self.request_version, message))
+        port.write(str(message + '\n'))
 
         if 'restoreAfter' in params:
             global message_old
