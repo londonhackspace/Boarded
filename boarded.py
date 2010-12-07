@@ -25,6 +25,8 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         return str(self.client_address[0])
 
     def do_GET(self):
+        global message_old
+
         url = urlparse.urlparse(self.path)
         params = urlparse.parse_qs(url.query)
         path = url.path
@@ -52,10 +54,9 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         port.write(str(message + '\n'))
 
         if 'restoreAfter' in params:
-            global message_old
             time.sleep(float(params['restoreAfter'][0]))
             port.write(str(message_old + "\n"))
-        else:
+        elif not message.startswith('$W$'):
             message_old = message
         
 
