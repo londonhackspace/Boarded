@@ -14,6 +14,10 @@ log = open(logfile, 'a')
 log.write(time.strftime('%a, %d %b %Y %H:%M:%S +0000\n', time.gmtime()))
 
 serialPort = config.get('boarded', 'serialport')
+
+if len(sys.argv) > 1:
+    serialPort = sys.argv[1]
+
 port = serial.Serial(serialPort, 9600, timeout=1)
 
 message_old = ""
