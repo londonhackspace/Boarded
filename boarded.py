@@ -38,11 +38,12 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         path = path.lstrip('/')
         message = urllib.unquote(path).decode('utf8')
         message = message[:162]
+        message = message.replace(u'\xa3', '\x1f')
 
         if (message == 'favicon.ico'):
             return
 
-        if not re.match('^[ -~]*$', message):
+        if not re.match('^[\x1f -~]*$', message):
             self.send_error(400)
             self.end_headers()
             self.wfile.write('Bad request, standard ASCII only please')
@@ -54,7 +55,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.wfile.write('OK')
 
         log.write('%s %s %s %s: "%s"\n' % (self.client_address,
-            self.command, self.path, self.request_version, message))
+            self.command, repr(self.path), self.request_version, message))
         port.write(str(message + '\n'))
 
         if 'restoreAfter' in params:
