@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-
-import BaseHTTPServer, urlparse, serial, ConfigParser, re, sys, urllib, time
+import sys, time, imp, ConfigParser
+import BaseHTTPServer, urlparse, urllib
 
 config = ConfigParser.ConfigParser()
 config.read((
@@ -13,14 +13,12 @@ logfile = config.get('boarded', 'logfile')
 log = open(logfile, 'a')
 log.write(time.strftime('%a, %d %b %Y %H:%M:%S +0000\n', time.gmtime()))
 
-serialPort = config.get('boarded', 'serialport')
+boardtype = config.get('boarded', 'type')
+module = __import__(boardtype)
 
-if len(sys.argv) > 1:
-    serialPort = sys.argv[1]
-
-port = serial.Serial(serialPort, 9600, timeout=1)
-
-message_old = ""
+params = dict(config.items(boardtype))
+cls = getattr(module, boardtype)
+board = cls(*sys.argv[1:], **params)
 
 class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
@@ -37,34 +35,38 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         path = path.lstrip('/')
         message = urllib.unquote(path).decode('utf8')
-        message = message[:162]
-        message = message.replace(u'\xa3', '\x1f')
 
-        if (message == 'favicon.ico'):
+        if message == 'favicon.ico':
+            # Prevent annoying warnings
             return
 
-        if not re.match('^[\x1f -~]*$', message):
+        if message.startswith('$W$') or 'restoreAfter' in params:
+            permanent = False
+        else:
+            permanent = True
+
+        try:
+            board.display(message, permanent)
+
+        except Exception, e:
             self.send_error(400)
             self.end_headers()
-            self.wfile.write('Bad request, standard ASCII only please')
-            return 
+            self.wfile.write('Bad request: %s' % e)
 
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
-        self.wfile.write('OK')
+        else:
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write('OK')
 
-        log.write('%s %s %s %s: "%s"\n' % (self.client_address,
-            self.command, repr(self.path), self.request_version, message))
-        port.write(str(message + '\n'))
+            log.write('%s %s %s %s: "%s"\n' % (self.client_address,
+                self.command, repr(self.path), self.request_version, message))
 
-        if 'restoreAfter' in params:
-            time.sleep(float(params['restoreAfter'][0]))
-            port.write(str(message_old + "\n"))
-        elif not message.startswith('$W$'):
-            message_old = message
-        
+            if 'restoreAfter' in params:
+                time.sleep(float(params['restoreAfter'][0]))
+                board.restore()
 
 PORT = config.getint('boarded', 'tcpport')
 httpd = BaseHTTPServer.HTTPServer(("", PORT), Handler)
 httpd.serve_forever()
+
