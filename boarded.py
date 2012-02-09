@@ -17,8 +17,10 @@ boardtype = config.get('boarded', 'type')
 module = __import__(boardtype)
 
 params = dict(config.items(boardtype))
+if len(sys.argv) > 1:
+    params['serialport'] = sys.argv[1]
 cls = getattr(module, boardtype)
-board = cls(*sys.argv[1:], **params)
+board = cls(**params)
 
 class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
