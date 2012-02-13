@@ -13,7 +13,7 @@ class InfotecBoard(object):
         if not re.match(r'^[ -~]*$', msg):
             raise ValueError('Standard ASCII only, please')
 
-        self.set_text(str(msg))
+        self.scroll_text(str(msg))
 
         if permanent:
             self.lastmsg = msg
@@ -21,8 +21,17 @@ class InfotecBoard(object):
     def restore(self):
         self.set_text(str(self.lastmsg))
 
-    def set_text(self, msg, args=[]):
+    def set_text(self, msg, centre=False, dunno=None):
+      args = []
+      if centre:
+        args.append(1)
       self.send_cmd(0, msg, args)
+
+    def scroll_text(self, msg, delay=2, repeat=False):
+      args = [delay]
+      if repeat:
+        args.append(1)
+      self.send_cmd(2, msg, args)
 
     def send_cmd(self, cmdnum, inbuf, args=[], serialtask=0, inflags=0, sendresponse=1):
       checksum = 0xcc # actually ignored
@@ -36,4 +45,12 @@ class InfotecBoard(object):
         checksum,
       )
       self.port.write(cmd)
+
+if __name__ == '__main__':
+  import sys
+  if len(sys.argv) <= 1:
+    print 'Usage: %s /dev/ttyS1 your message here' % sys.argv[0]
+  else:
+    board = InfotecBoard(sys.argv[1])
+    board.scroll_text(' '.join(sys.argv[2:]))
 
