@@ -3,7 +3,7 @@ import serial, re, time
 
 class NotifyBoard(object):
     def __init__(self, serialport):
-        self.port = serial.Serial(serialport, 9600, timeout=1)
+        self.port = serial.Serial(serialport, 9600, timeout=2)
         self.lastmsg = ''
 
     def display(self, msg, permanent=True):

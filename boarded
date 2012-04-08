@@ -9,7 +9,7 @@
 ### END INIT INFO
 
 PROC=/usr/bin/python
-ARGS='/home/ms7821/git/Boarded/boarded.py'
+ARGS='/usr/local/bin/Boarded/boarded.py'
 PIDFILE=/var/run/boarded.pid
 
 case "$1" in
