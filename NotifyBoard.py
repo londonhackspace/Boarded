@@ -5,6 +5,9 @@ class NotifyBoard(object):
     def __init__(self, serialport):
         self.port = serial.Serial(serialport, 9600, timeout=2)
         self.lastmsg = ''
+        # seems that we need a newline for the
+        # arduino to work??
+        self.eol = '\x0a'
 
     def display(self, msg, permanent=True):
         assert isinstance(msg, unicode)
@@ -14,10 +17,10 @@ class NotifyBoard(object):
         if not re.match('^[\x1f -~]*$', msg):
             raise ValueError('Standard ASCII only, please')
 
-        self.port.write(str(msg + '\n'))
+        self.port.write(str(msg + self.eol))
 
         if permanent:
             self.lastmsg = msg
 
     def restore(self):
-        self.port.write(str(self.lastmsg) + '\n')
+        self.port.write(str(self.lastmsg) + self.eol)
