@@ -3,7 +3,12 @@ import serial, re, time
 
 class NotifyBoard(object):
     def __init__(self, serialport):
-        self.port = serial.Serial(serialport, 9600, timeout=2)
+        try:
+            self.port = serial.Serial(serialport, 9600, timeout=2)
+        except serial.SerialException:
+            # errors went to stderr, which went to Harry Potter land.
+            # ideally these would go to irc or something.
+            raise RuntimeError('unable to open serial port?')
         self.lastmsg = ''
         # seems that we need a newline for the
         # arduino to work??

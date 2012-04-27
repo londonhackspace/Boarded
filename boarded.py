@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import sys, time, imp, ConfigParser
+import sys, time, imp, ConfigParser, os
 import BaseHTTPServer, urlparse, urllib
 
 config = ConfigParser.ConfigParser()
@@ -8,6 +8,10 @@ config.read((
     sys.path[0] + '/boarded.conf',
     '/etc/boarded.conf'
 ))
+
+# if we don't do this board.log ends up in /
+# which is no use to anyone.
+os.chdir(sys.path[0])
 
 logfile = config.get('boarded', 'logfile')
 log = open(logfile, 'a')
@@ -20,7 +24,13 @@ params = dict(config.items(boardtype))
 if len(sys.argv) > 1:
     params['serialport'] = sys.argv[1]
 cls = getattr(module, boardtype)
-board = cls(**params)
+try:
+    board = cls(**params)
+except RuntimeError, err:
+    # ('172.31.24.101', 37292) GET '/test' HTTP/1.1: "test"
+    log.write('%s %s %s %s: "%s"\n' % (('127.0.0.1', 0),
+                    'FAIL', '/', 'HTTP/1.1', str(err) + " quitting."))
+    exit(-1)
 
 class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
