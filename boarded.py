@@ -58,7 +58,11 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             permanent = True
 
         try:
-            board.display(message, permanent)
+            if hasattr(board, "queue"):
+                print "enquing"
+                board.queue.put_nowait([message, permanent])
+            else:
+                board.display(message, permanent)
 
         except Exception, e:
             self.send_error(400)

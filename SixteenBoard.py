@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import serial, re, time
+import serial, re, time, threading, Queue
 from sixteensegfont import font
 
 #
@@ -15,9 +15,10 @@ def mangle(c):
     #        c387 -> 783c
     return "%c%c%c%c" % (mangled[3], mangled[2], mangled[1], mangled[0])
 
+q = Queue.Queue(42)
 
-class SixteenBoard(object):
-    def __init__(self, serialport):
+class SixteenWorker():
+    def __init__(self, serialport, queue):
         try:
             self.port = serial.Serial(serialport, 9600, timeout=2)
         except serial.SerialException:
@@ -26,8 +27,18 @@ class SixteenBoard(object):
             raise RuntimeError('unable to open serial port?')
         self.lastmsg = ''
         self.clear()
-        
-    def message(self,str):
+        self.queue = queue
+
+    def run(self):
+        while True:
+            try:
+                # clear the board after 10 mins, stops it being left on all night
+                message = self.queue.get(True, 60 * 10)
+                self.display(message[0], message[1])
+            except Queue.Empty:
+                self.clear()
+
+    def message(self, str):
         for c in str:
             self.port.write("w" + mangle(font[c]))
             time.sleep(0.5)
@@ -47,7 +58,8 @@ class SixteenBoard(object):
 
         if not re.match('^[ -~]*$', msg):
             raise ValueError('Standard ASCII only, please')
-
+        
+        self.clear()
         self.message(msg)
 
         if permanent:
@@ -55,3 +67,11 @@ class SixteenBoard(object):
 
     def restore(self):
         self.message(str(self.lastmsg))
+
+class SixteenBoard(object):
+    def __init__(self, serialport):
+        self.queue = Queue.Queue(42)
+        self.worker = SixteenWorker(serialport, self.queue)
+        self.t = threading.Thread(name="sixteen_work", target=self.worker.run)
+        self.t.setDaemon(True)
+        self.t.start()
