@@ -44,9 +44,7 @@ class SixteenWorker():
             time.sleep(0.5)
 
     def clear(self):
-        for i in range(0,8):
-            self.port.write("w0000")
-            time.sleep(0.2)
+        self.port.write("r")
 
     def display(self, msg, permanent=True):
         assert isinstance(msg, unicode)
