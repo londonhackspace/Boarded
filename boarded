@@ -8,16 +8,16 @@
 # Short-Description: Board display mini web server
 ### END INIT INFO
 
-PROC=/usr/bin/python
-ARGS='/usr/local/bin/Boarded/boarded.py'
+#PROC=/usr/bin/python
+ARGS='/root/Boarded/boarded.py'
 PIDFILE=/var/run/boarded.pid
 
 case "$1" in
   start)
-    start-stop-daemon --start --pidfile $PIDFILE --exec $PROC --background --make-pidfile -- $ARGS
+    start-stop-daemon --start --pidfile $PIDFILE --background --make-pidfile --startas $ARGS
   ;;
   stop)
-    start-stop-daemon --stop --pidfile $PIDFILE --exec $PROC --retry TERM/10/KILL/5 && rm $PIDFILE
+    start-stop-daemon --stop --pidfile $PIDFILE --retry TERM/10/KILL/5 && rm $PIDFILE
   ;;
   restart|reload|force-reload)
     $0 stop
