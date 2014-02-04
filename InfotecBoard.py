@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import serial, re, time
+from datetime import datetime
 
 class InfotecBoard(object):
     def __init__(self, serialport):
@@ -33,7 +34,14 @@ class InfotecBoard(object):
         args.append(1)
       self.send_cmd(2, msg, args)
 
-    def send_cmd(self, cmdnum, inbuf, args=[], serialtask=0, inflags=0, sendresponse=1):
+    def set_clock(self, dt):
+      assert 1990 <= dt.year < 2090
+      self.send_cmd(0x8b, args=[dt.hour, dt.minute, dt.second])
+      this.send_cmd(0x8c, args=[dt.day, dt.month, dt.year % 100])
+
+    def send_cmd(self, cmdnum, inbuf='', args=None, serialtask=0, inflags=0, sendresponse=1):
+      if args is None:
+        args = []
       checksum = 0xcc # actually ignored
       cmd = '>%x#%x#%x#%02x#%s#%s#%02x<' % (
         inflags,
@@ -49,8 +57,12 @@ class InfotecBoard(object):
 if __name__ == '__main__':
   import sys
   if len(sys.argv) <= 1:
-    print 'Usage: %s /dev/ttyS1 your message here' % sys.argv[0]
+    print 'Usage: %s /dev/ttyS1 [ --set-clock | your message here ]' % sys.argv[0]
   else:
     board = InfotecBoard(sys.argv[1])
-    board.scroll_text(' '.join(sys.argv[2:]))
+    msg = ' '.join(sys.argv[2:])
+    if msg == '--set-clock':
+      board.set_clock(datetime.now())
+    else:
+      board.scroll_text(msg)
 
