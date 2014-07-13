@@ -12,6 +12,10 @@ PROC=/usr/bin/python
 ARGS='/root/Boarded-16/boarded.py'
 PIDFILE=/var/run/boarded-16.pid
 
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+. /lib/init/vars.sh
+. /lib/lsb/init-functions
+
 case "$1" in
   start)
     start-stop-daemon --start --pidfile $PIDFILE --exec $PROC --background --make-pidfile -- $ARGS
