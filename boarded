@@ -9,7 +9,7 @@
 ### END INIT INFO
 
 #PROC=/usr/bin/python
-ARGS='/root/Boarded/boarded.py'
+ARGS='/opt/Boarded/boarded.py'
 PIDFILE=/var/run/boarded.pid
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
